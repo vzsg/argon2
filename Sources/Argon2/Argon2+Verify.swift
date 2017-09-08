@@ -8,4 +8,16 @@ public extension Argon2 {
             }
         }
     }
+
+    public func assertVerification(ofHash hash: String, against password: [UInt8]) throws {
+        try hash.withCString { h in
+            try password.withUnsafeBytes { pwd in
+                let res = self.verifyFn(h, pwd.baseAddress, password.count)
+
+                if let error = Argon2Error(Argon2_ErrorCodes(rawValue: res)) {
+                    throw error
+                }
+            }
+        }
+    }
 }

@@ -5,12 +5,12 @@ public extension Argon2 {
                      salt: [UInt8],
                      timeCost: UInt32,
                      memoryCost: UInt32,
-                     parallelism: UInt32) -> String? {
+                     parallelism: UInt32) throws -> String {
         var buf = [CChar](repeating: 0, count: 256)
 
-        return password.withUnsafeBytes { pwd in
-            salt.withUnsafeBytes { slt in
-                buf.withUnsafeMutableBufferPointer { res in
+        return try password.withUnsafeBytes { pwd in
+            try salt.withUnsafeBytes { slt in
+                try buf.withUnsafeMutableBufferPointer { res in
                     let err = self.hashFn(timeCost,
                                        1 << memoryCost,
                                        parallelism,
@@ -22,11 +22,11 @@ public extension Argon2 {
                                        res.baseAddress,
                                        buf.count - 1)
 
-                    guard err == ARGON2_OK.rawValue else {
-                        return nil
+                    if let error = Argon2Error(Argon2_ErrorCodes(rawValue: err)) {
+                        throw error
                     }
 
-                    return String(validatingUTF8: res.baseAddress!)
+                    return String(validatingUTF8: res.baseAddress!) ?? ""
                 }
             }
         }
